@@ -174,13 +174,7 @@ export default function Login() {
                 {loading ? 'Signing in...' : 'Sign In →'}
               </button>
             </form>
-
-            {/* Demo hint */}
-            <div className="mt-6 p-3 rounded-xl text-center text-xs text-gray-400"
-              style={{ background: 'rgba(11,30,61,0.04)', border: '1px solid rgba(11,30,61,0.06)', fontFamily: 'var(--font-mono)' }}>
-              Admin demo: <strong>admin@smphysics.in</strong> / <strong>Admin@SM2024</strong>
-            </div>
-
+                
             <p className="text-center text-xs text-gray-400 mt-6" style={{ fontFamily: 'var(--font-body)' }}>
               By signing in you agree to our Terms of Service and Privacy Policy.
             </p>
