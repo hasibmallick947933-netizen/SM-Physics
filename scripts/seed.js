@@ -9,8 +9,8 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@smphysics.in';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@SM2024';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'smphysics25@gmail.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'SM2506';
 
 const UserSchema = new mongoose.Schema(
   {
