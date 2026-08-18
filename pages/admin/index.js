@@ -65,11 +65,12 @@ export default function AdminDashboard() {
   }
 
   const quickActions = [
-    { icon: HiPlusCircle, label: 'Create Test', href: '/admin/tests/create', color: '#1A6FD4', bg: '#EFF6FF' },
-    { icon: HiClipboardList, label: 'Add Question', href: '/admin/questions', color: '#7C3AED', bg: '#F5F3FF' },
-    { icon: HiChartBar, label: 'View Results', href: '/admin/results', color: '#059669', bg: '#ECFDF5' },
-    { icon: HiUsers, label: 'Manage Students', href: '/admin/students', color: '#D97706', bg: '#FFFBEB' },
-  ];
+  { icon: HiClipboardList, label: 'Manage Tests', href: '/admin/tests', color: '#1A6FD4', bg: '#EFF6FF' },
+  { icon: HiPlusCircle, label: 'Create Test', href: '/admin/tests/create', color: '#1A6FD4', bg: '#EFF6FF' },
+  { icon: HiClipboardList, label: 'Add Question', href: '/admin/questions', color: '#7C3AED', bg: '#F5F3FF' },
+  { icon: HiChartBar, label: 'View Results', href: '/admin/results', color: '#059669', bg: '#ECFDF5' },
+  { icon: HiUsers, label: 'Manage Students', href: '/admin/students', color: '#D97706', bg: '#FFFBEB' },
+];
 
   return (
     <>
