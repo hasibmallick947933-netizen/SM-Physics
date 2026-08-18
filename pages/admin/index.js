@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { HiArrowLeft, HiPlusCircle, HiTrash, HiClock, HiAcademicCap } from 'react-icons/hi';
