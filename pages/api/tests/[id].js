@@ -1,42 +1,72 @@
 import { dbConnect } from '../../../lib/db';
 import Test from '../../../models/Test';
-import Response from '../../../models/Response';
-import { requireAuth } from '../../../lib/auth';
+import { getTokenFromRequest, verifyToken } from '../../../lib/auth';
 
-async function handler(req, res) {
+export default async function handler(req, res) {
   await dbConnect();
   const { id } = req.query;
 
+  const token = getTokenFromRequest(req);
+  const decoded = token ? verifyToken(token) : null;
+  if (!decoded) return res.status(401).json({ error: 'Unauthorized' });
+
   if (req.method === 'GET') {
-    const test = await Test.findById(id).populate('questions');
+    const test = await Test.findById(id).populate('questions').lean();
     if (!test) return res.status(404).json({ error: 'Test not found' });
 
-    if (req.user.role !== 'admin') {
-      if (!test.isPublished || !test.isActive)
-        return res.status(403).json({ error: 'Test not available' });
-
-      // Check if student already attempted
-      const existing = await Response.findOne({ student: req.user.id, test: id });
-      if (existing && existing.status !== 'in-progress')
-        return res.status(400).json({ error: 'You have already attempted this test' });
+    if (decoded.role !== 'admin') {
+      if (!test.isPublished || !test.isActive) {
+        return res.status(403).json({ error: 'This test is not currently available' });
+      }
+      const now = new Date();
+      if (test.availableFrom && now < new Date(test.availableFrom)) {
+        return res.status(403).json({ error: 'This test has not started yet' });
+      }
+      if (test.availableUntil && now > new Date(test.availableUntil)) {
+        return res.status(403).json({ error: 'This test has closed' });
+      }
+      if (test.targetClass !== 'All' && test.targetClass !== decoded.class) {
+        return res.status(403).json({ error: 'This test is not available for your class' });
+      }
     }
 
     return res.status(200).json({ test });
   }
 
-  if (req.method === 'PUT') {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
-    const test = await Test.findByIdAndUpdate(id, req.body, { new: true });
-    return res.status(200).json({ test });
+  // Admin-only from here down
+  if (decoded.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  if (req.method === 'PATCH') {
+    try {
+      // Used for: editing test details, toggling isActive (on/off),
+      // toggling isPublished, changing targetClass, or the schedule window.
+      const allowed = [
+        'title', 'description', 'subject', 'duration', 'targetClass',
+        'availableFrom', 'availableUntil', 'isPublished', 'isActive',
+        'instructions', 'questions', 'settings', 'maxAttempts', 'passingMarks',
+      ];
+      const updates = {};
+      for (const key of allowed) {
+        if (req.body[key] !== undefined) updates[key] = req.body[key];
+      }
+
+      const test = await Test.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+      if (!test) return res.status(404).json({ error: 'Test not found' });
+
+      return res.status(200).json({ test });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Update failed' });
+    }
   }
 
   if (req.method === 'DELETE') {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
-    await Test.findByIdAndDelete(id);
-    return res.status(200).json({ message: 'Test deleted' });
+    const test = await Test.findByIdAndDelete(id);
+    if (!test) return res.status(404).json({ error: 'Test not found' });
+    return res.status(200).json({ success: true });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Allow', ['GET', 'PATCH', 'DELETE']);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
-
-export default requireAuth(handler);
