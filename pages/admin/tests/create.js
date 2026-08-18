@@ -16,7 +16,18 @@ export default function CreateTest() {
   const [subject, setSubject] = useState('Physics');
   const [duration, setDuration] = useState(180);
   const [instructions, setInstructions] = useState('');
+
+  // ── NEW: class targeting ─────────────────────────────────────────────
+  const [targetClass, setTargetClass] = useState('All');
+
+  // ── NEW: schedule window ─────────────────────────────────────────────
+  const [availableFrom, setAvailableFrom] = useState('');
+  const [availableUntil, setAvailableUntil] = useState('');
+
   const [isPublished, setIsPublished] = useState(false);
+  // ── NEW: on/off toggle (separate from "publish") ─────────────────────
+  const [isActive, setIsActive] = useState(true);
+
   const [antiCheat, setAntiCheat] = useState(true);
   const [shuffleQ, setShuffleQ] = useState(false);
   const [shuffleO, setShuffleO] = useState(false);
@@ -121,10 +132,21 @@ export default function CreateTest() {
     e.preventDefault();
     if (!title) { toast.error('Test title is required'); return; }
     if (selectedQIds.length === 0) { toast.error('Select at least one question'); return; }
+
+    // Validate schedule window if both are set
+    if (availableFrom && availableUntil && new Date(availableFrom) >= new Date(availableUntil)) {
+      toast.error('"Available Until" must be after "Available From"');
+      return;
+    }
+
     setSubmitting(true);
     var payload = {
       title: title, description: description, subject: subject,
       duration: duration, instructions: instructions, isPublished: isPublished,
+      isActive: isActive,
+      targetClass: targetClass,
+      availableFrom: availableFrom ? new Date(availableFrom).toISOString() : undefined,
+      availableUntil: availableUntil ? new Date(availableUntil).toISOString() : undefined,
       questions: selectedQIds,
       settings: {
         antiCheatEnabled: antiCheat, shuffleQuestions: shuffleQ,
@@ -200,11 +222,48 @@ export default function CreateTest() {
                           value={duration} onChange={function(e) { setDuration(Number(e.target.value)); }} />
                       </div>
                     </div>
+
+                    {/* ── NEW: Target Class ────────────────────────────── */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Target Class</label>
+                      <select className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={inputStyle}
+                        value={targetClass} onChange={function(e) { setTargetClass(e.target.value); }}>
+                        <option value="All">All Classes</option>
+                        <option value="Class 11">Class 11</option>
+                        <option value="Class 12">Class 12</option>
+                        <option value="Dropper">Dropper</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Choose a specific class to restrict this test — students in other classes won&apos;t see it.
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Special Instructions</label>
                       <textarea rows={2} className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={inputStyle}
                         value={instructions} onChange={function(e) { setInstructions(e.target.value); }}
                         placeholder="Optional instructions for students..." />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── NEW: Schedule Window ──────────────────────────────── */}
+                <div className="p-6 rounded-2xl" style={{ background: 'white', boxShadow: '0 4px 24px rgba(11,30,61,0.08)' }}>
+                  <h2 className="font-semibold text-gray-800 mb-2">Test Availability Window</h2>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Students can only start this test between these two times. Leave blank for no time restriction.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Available From</label>
+                      <input type="datetime-local" className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={inputStyle}
+                        value={availableFrom} onChange={function(e) { setAvailableFrom(e.target.value); }} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Available Until</label>
+                      <input type="datetime-local" className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={inputStyle}
+                        value={availableUntil} onChange={function(e) { setAvailableUntil(e.target.value); }} />
                     </div>
                   </div>
                 </div>
@@ -250,18 +309,35 @@ export default function CreateTest() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl flex items-center justify-between"
+                {/* ── Publish + Active toggles ──────────────────────────── */}
+                <div className="p-4 rounded-2xl space-y-3"
                   style={{ background: 'white', boxShadow: '0 4px 24px rgba(11,30,61,0.08)' }}>
-                  <div>
-                    <p className="font-medium text-gray-800">Publish Immediately</p>
-                    <p className="text-xs text-gray-400">Make test visible to students right away</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-800">Publish Immediately</p>
+                      <p className="text-xs text-gray-400">Make test visible to students right away</p>
+                    </div>
+                    <button type="button" onClick={function() { setIsPublished(!isPublished); }}
+                      className="w-11 h-6 rounded-full transition-all relative shrink-0"
+                      style={{ background: isPublished ? '#059669' : '#D1D5DB' }}>
+                      <div className="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
+                        style={{ left: isPublished ? '24px' : '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                    </button>
                   </div>
-                  <button type="button" onClick={function() { setIsPublished(!isPublished); }}
-                    className="w-11 h-6 rounded-full transition-all relative shrink-0"
-                    style={{ background: isPublished ? '#059669' : '#D1D5DB' }}>
-                    <div className="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
-                      style={{ left: isPublished ? '24px' : '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                  </button>
+
+                  {/* ── NEW: Active on/off switch ────────────────────────── */}
+                  <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid #F3F4F6' }}>
+                    <div>
+                      <p className="font-medium text-gray-800">Test Active</p>
+                      <p className="text-xs text-gray-400">Turn off anytime to instantly block new attempts, even if published</p>
+                    </div>
+                    <button type="button" onClick={function() { setIsActive(!isActive); }}
+                      className="w-11 h-6 rounded-full transition-all relative shrink-0"
+                      style={{ background: isActive ? '#059669' : '#DC2626' }}>
+                      <div className="w-4 h-4 bg-white rounded-full absolute top-1 transition-all"
+                        style={{ left: isActive ? '24px' : '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
